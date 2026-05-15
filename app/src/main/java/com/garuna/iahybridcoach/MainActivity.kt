@@ -13,8 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.garuna.iahybridcoach.data.auth.AuthRepository
-import com.garuna.iahybridcoach.ui.home.HomeScreen
 import com.garuna.iahybridcoach.ui.login.LoginScreen
+import com.garuna.iahybridcoach.ui.main.MainScaffold
 import com.garuna.iahybridcoach.ui.theme.IAHybridCoachTheme
 import com.google.firebase.auth.FirebaseUser
 
@@ -24,38 +24,34 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IAHybridCoachTheme {
-                // CLAUDE CODE: navegacion manual minima. Mientras solo tengamos
-                // dos pantallas (Login y Home) no merece la pena meter una
-                // libreria de navegacion.
+                // CLAUDE CODE: navegacion de alto nivel: sesion vs no sesion.
+                // Dentro de "con sesion" la navegacion entre tabs la maneja
+                // MainScaffold con su propio NavController.
                 //
                 // El estado inicial se rellena con AuthRepository.currentUser:
                 // si Firebase ya tiene sesion persistida en el dispositivo,
-                // arrancamos directamente en Home. Si no, en Login.
+                // arrancamos directamente en MainScaffold; si no, en Login.
                 var currentUser by remember {
                     mutableStateOf<FirebaseUser?>(AuthRepository.currentUser)
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val screenModifier = Modifier.padding(innerPadding)
-                    val user = currentUser
-                    if (user == null) {
+                val user = currentUser
+                if (user == null) {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         LoginScreen(
                             onLoginSuccess = { signedInUser ->
                                 currentUser = signedInUser
                             },
-                            modifier = screenModifier
-                        )
-                    } else {
-                        HomeScreen(
-                            userDisplayName = user.displayName,
-                            userEmail = user.email,
-                            onSignOutClick = {
-                                AuthRepository.signOut()
-                                currentUser = null
-                            },
-                            modifier = screenModifier
+                            modifier = Modifier.padding(innerPadding)
                         )
                     }
+                } else {
+                    MainScaffold(
+                        onSignOut = {
+                            AuthRepository.signOut()
+                            currentUser = null
+                        }
+                    )
                 }
             }
         }

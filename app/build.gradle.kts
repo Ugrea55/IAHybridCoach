@@ -66,6 +66,10 @@ dependencies {
     // CLAUDE CODE: ViewModel para Compose + corrutinas con Play Services.
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // CLAUDE CODE: navegacion entre las tabs y set de iconos Material.
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.material.icons.extended)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
