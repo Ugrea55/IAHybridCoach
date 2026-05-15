@@ -1,0 +1,60 @@
+# CLAUDE CODE: .gitignore para proyecto Android Studio + Kotlin + Compose.
+# CLAUDE CODE: el objetivo es no subir nunca al repo binarios generados,
+# rutas locales de la maquina, ni ningun tipo de credencial o clave.
+
+# ---- Gradle / build ----
+.gradle/
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# ---- IntelliJ / Android Studio ----
+*.iml
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetDropDown.xml
+.idea/deploymentTargetSelector.xml
+.idea/gradle.xml
+.idea/misc.xml
+.idea/compiler.xml
+.idea/kotlinc.xml
+.idea/runConfigurations.xml
+
+# CLAUDE CODE: cache del compilador de Kotlin, no aporta nada al repo
+.kotlin/
+
+# ---- Otros editores (por si alguna vez se abre con VS Code, Fleet, etc.) ----
+.vscode/
+.fleet/
+
+# ---- Sistema operativo ----
+.DS_Store
+Thumbs.db
+
+# ---- Propiedades locales (contienen rutas absolutas de la maquina) ----
+local.properties
+
+# ---- CREDENCIALES Y CLAVES (NUNCA SUBIR) ----
+# CLAUDE CODE: si una keystore se filtra, cualquiera puede firmar updates
+# de la app suplantando tu identidad en Play Store. Es irrecuperable.
+*.jks
+*.keystore
+keystore.properties
+key.properties
+
+# CLAUDE CODE: por si en algun momento se usan archivos .env con secretos
+.env
+.env.*
+!.env.example
+
+# CLAUDE CODE: google-services.json (Firebase) lo decidiremos cuando llegue
+# el Paso 3. De momento no esta ignorado.
+
+# ---- Logs y temporales ----
+*.log
+hs_err_pid*
