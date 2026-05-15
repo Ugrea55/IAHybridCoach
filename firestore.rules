@@ -1,0 +1,32 @@
+// CLAUDE CODE:
+// Reglas de seguridad de Cloud Firestore.
+//
+// Principio: cada usuario autenticado solo puede leer y escribir su propio
+// arbol /users/{su uid}/...  Nadie puede listar la coleccion de usuarios ni
+// ver datos de otros. Las reglas las evalua el servidor con el JWT firmado
+// por Firebase Auth, asi que esto NO se puede saltar desde el cliente.
+//
+// Cualquier otra ruta esta denegada por defecto.
+//
+// IMPORTANTE: este archivo NO se despliega solo. Hay que copiarlo en
+// Firebase Console -> Firestore -> Reglas, y pulsar "Publicar". Si en el
+// futuro instalamos Firebase CLI, se podra desplegar con `firebase deploy
+// --only firestore:rules` directamente desde aqui.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Datos propios del usuario y todo lo que cuelgue de su nodo:
+    // /users/{uid}                  -> documento de perfil (futuro)
+    // /users/{uid}/workouts/{id}    -> entrenamientos
+    // /users/{uid}/health/{id}      -> datos de salud (futuro)
+    // /users/{uid}/calendar/{id}    -> eventos calendario (futuro)
+    // /users/{uid}/messages/{id}    -> mensajes del chat con la IA (futuro)
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+  }
+}
