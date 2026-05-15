@@ -8,6 +8,12 @@ lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.2.10"
 composeBom = "2026.02.01"
+googleServices = "4.4.2"
+firebaseBom = "33.7.0"
+credentials = "1.3.0"
+googleid = "1.1.1"
+lifecycleViewmodelCompose = "2.10.0"
+coroutinesPlayServices = "1.8.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -25,7 +31,28 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 
+# CLAUDE CODE: Firebase BoM gestiona versiones compatibles entre todas las librerias de Firebase.
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+
+# CLAUDE CODE: Credential Manager es la API moderna de Android para gestionar
+# credenciales (Google Sign-In, passkeys, contrasenias guardadas). Sustituye a
+# la antigua GoogleSignInClient que esta deprecada desde 2024.
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+
+# CLAUDE CODE: viewModel() helper para Compose. Permite obtener un ViewModel
+# que sobrevive a recomposiciones y cambios de configuracion.
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+
+# CLAUDE CODE: extension .await() para convertir Task<T> de Play Services
+# (lo que devuelve FirebaseAuth) en suspend functions de Kotlin.
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlayServices" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 

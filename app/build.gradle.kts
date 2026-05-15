@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    // CLAUDE CODE: aplica el plugin de Google Services en este modulo. Lee
+    // app/google-services.json y inyecta la configuracion de Firebase.
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -48,6 +51,21 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    // CLAUDE CODE: Firebase BoM. Al usar platform(...) no tenemos que poner
+    // version a las librerias individuales de Firebase, la BoM las fija.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
+
+    // CLAUDE CODE: librerias para el login con Google via Credential Manager.
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
+    // CLAUDE CODE: ViewModel para Compose + corrutinas con Play Services.
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

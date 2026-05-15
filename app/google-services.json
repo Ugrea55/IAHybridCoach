@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "837519122645",
+    "project_id": "iahybridcoach",
+    "storage_bucket": "iahybridcoach.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837519122645:android:ce3bc63d691293ade8425c",
+        "android_client_info": {
+          "package_name": "com.garuna.iahybridcoach"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "837519122645-6gpvdavqalkfn4cp0qr5et5nee8oqiid.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.garuna.iahybridcoach",
+            "certificate_hash": "7e025ecb5ff0be765bc7bcced3605af7ef07795f"
+          }
+        },
+        {
+          "client_id": "837519122645-9qhee9j0ustpvfprhn5l2p50gb576mf7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUJ1lGZwx3MmFfiHQVlPLDExbooc1odTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "837519122645-9qhee9j0ustpvfprhn5l2p50gb576mf7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">IAHybridCoach</string>
+
+    <!-- CLAUDE CODE: Web Client ID del OAuth client de tipo 3 (web) del proyecto
+         Firebase. Lo extraemos de google-services.json y lo dejamos como string
+         resource para poder leerlo desde el codigo via R.string.web_client_id.
+         translatable=false porque es un identificador, no texto de UI. -->
+    <string name="web_client_id" translatable="false">837519122645-9qhee9j0ustpvfprhn5l2p50gb576mf7.apps.googleusercontent.com</string>
 </resources>
