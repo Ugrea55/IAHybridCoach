@@ -24,6 +24,9 @@
 .idea/compiler.xml
 .idea/kotlinc.xml
 .idea/runConfigurations.xml
+.idea/AndroidProjectSystem.xml
+.idea/inspectionProfiles/
+.idea/vcs.xml
 
 # CLAUDE CODE: cache del compilador de Kotlin, no aporta nada al repo
 .kotlin/

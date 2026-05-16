@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -35,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.garuna.iahybridcoach.data.workouts.Workout
 import com.garuna.iahybridcoach.data.workouts.WorkoutType
+import com.garuna.iahybridcoach.ui.common.TapToOpenField
 import com.google.firebase.Timestamp
 import java.time.Instant
 import java.time.LocalDate
@@ -99,14 +98,10 @@ fun AddWorkoutSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            TapToOpenField(
                 value = formatFechaCompact(fechaMillis),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Fecha") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickableNoRipple { showDatePicker = true }
+                label = "Fecha",
+                onClick = { showDatePicker = true }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -216,19 +211,6 @@ private fun TipoDropdown(
             }
         }
     }
-}
-
-// CLAUDE CODE: un Modifier.clickable normal anyade ripple, pero los Material
-// OutlinedTextField readOnly ya manejan focus visualmente. Mantenemos el
-// click sin ripple para no duplicar feedback.
-@Composable
-private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier {
-    val interactionSource = remember { MutableInteractionSource() }
-    return this.clickable(
-        interactionSource = interactionSource,
-        indication = null,
-        onClick = onClick
-    )
 }
 
 private val fechaCompactFormatter: DateTimeFormatter =
