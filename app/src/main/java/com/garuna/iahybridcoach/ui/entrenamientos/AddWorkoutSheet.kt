@@ -57,13 +57,17 @@ import java.util.Locale
 fun AddWorkoutSheet(
     onDismiss: () -> Unit,
     onSave: (Workout) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // CLAUDE CODE: fecha pre-rellenada. Por defecto = hoy. Desde el
+    // calendario se pasa la fecha del dia seleccionado para que el formulario
+    // arranque con esa fecha (mejor UX al planificar).
+    initialFechaMillis: Long = System.currentTimeMillis()
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // CLAUDE CODE: estado del formulario.
     var tipo by remember { mutableStateOf(WorkoutType.FUERZA) }
-    var fechaMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var fechaMillis by remember { mutableStateOf(initialFechaMillis) }
     var descripcion by remember { mutableStateOf("") }
 
     var showDatePicker by remember { mutableStateOf(false) }

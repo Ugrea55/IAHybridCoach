@@ -70,6 +70,9 @@ dependencies {
     // CLAUDE CODE: navegacion entre las tabs y set de iconos Material.
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // CLAUDE CODE: calendario para Compose.
+    implementation(libs.kizitonwose.calendar.compose)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
