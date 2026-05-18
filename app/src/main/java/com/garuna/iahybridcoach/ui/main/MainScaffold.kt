@@ -27,8 +27,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.garuna.iahybridcoach.ui.calendario.CalendarioScreen
 import com.garuna.iahybridcoach.ui.chat.ChatScreen
+import com.garuna.iahybridcoach.ui.detail.WorkoutDetailScreen
 import com.garuna.iahybridcoach.ui.entrenamientos.EntrenamientosScreen
 import com.garuna.iahybridcoach.ui.imports.ImportWorkoutsScreen
 import com.garuna.iahybridcoach.ui.profile.ProfileScreen
@@ -36,6 +39,8 @@ import com.garuna.iahybridcoach.ui.salud.SaludScreen
 
 private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_IMPORT_WORKOUTS = "import_workouts"
+private const val ROUTE_WORKOUT_DETAIL = "workout_detail"
+private const val ARG_WORKOUT_ID = "workoutId"
 
 /* CLAUDE CODE:
  * Contenedor principal para usuarios autenticados.
@@ -59,7 +64,8 @@ fun MainScaffold(
 
     val isProfileRoute = currentRoute == ROUTE_PROFILE
     val isImportRoute = currentRoute == ROUTE_IMPORT_WORKOUTS
-    val isSecondaryRoute = isProfileRoute || isImportRoute
+    val isDetailRoute = currentRoute?.startsWith("$ROUTE_WORKOUT_DETAIL/") == true
+    val isSecondaryRoute = isProfileRoute || isImportRoute || isDetailRoute
     val isEntrenosTab = currentRoute == BottomNavDestination.Entrenamientos.route
 
     var menuExpanded by remember { mutableStateOf(false) }
@@ -74,6 +80,10 @@ fun MainScaffold(
                 )
                 isImportRoute -> SecondaryRouteTopBar(
                     title = "Importar entrenos",
+                    onBack = { navController.popBackStack() }
+                )
+                isDetailRoute -> SecondaryRouteTopBar(
+                    title = "Entrenamiento",
                     onBack = { navController.popBackStack() }
                 )
                 else -> TopAppBar(
@@ -156,7 +166,13 @@ fun MainScaffold(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavDestination.Entrenamientos.route) {
-                EntrenamientosScreen()
+                EntrenamientosScreen(
+                    onWorkoutClick = { workoutId ->
+                        navController.navigate("$ROUTE_WORKOUT_DETAIL/$workoutId") {
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
             composable(BottomNavDestination.Salud.route) {
                 SaludScreen()
@@ -174,6 +190,13 @@ fun MainScaffold(
                 ImportWorkoutsScreen(
                     onBack = { navController.popBackStack() }
                 )
+            }
+            composable(
+                route = "$ROUTE_WORKOUT_DETAIL/{$ARG_WORKOUT_ID}",
+                arguments = listOf(navArgument(ARG_WORKOUT_ID) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getString(ARG_WORKOUT_ID).orEmpty()
+                WorkoutDetailScreen(workoutId = id)
             }
         }
     }

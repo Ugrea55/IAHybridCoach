@@ -1,18 +1,27 @@
 package com.garuna.iahybridcoach.data.healthconnect
 
 import android.content.Context
+import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.ExerciseRouteResult
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.garuna.iahybridcoach.data.workouts.Workout
 import com.garuna.iahybridcoach.data.workouts.WorkoutType
+import com.garuna.iahybridcoach.data.workouts.detail.HrSample
+import com.garuna.iahybridcoach.data.workouts.detail.LapInfo
+import com.garuna.iahybridcoach.data.workouts.detail.RoutePoint
+import com.garuna.iahybridcoach.data.workouts.detail.SegmentInfo
+import com.garuna.iahybridcoach.data.workouts.detail.SpeedSample
+import com.garuna.iahybridcoach.data.workouts.detail.WorkoutDetail
 import com.google.firebase.Timestamp
 import java.time.Duration
 import java.time.Instant
@@ -32,12 +41,17 @@ import java.util.Date
  */
 class HealthConnectManager(private val context: Context) {
 
-    /** Permisos que pedimos. Lectura de ejercicio + resumenes. */
+    /** Permisos que pedimos. Lectura de ejercicio + resumenes + detalle. */
     val permissions: Set<String> = setOf(
         HealthPermission.getReadPermission(ExerciseSessionRecord::class),
         HealthPermission.getReadPermission(DistanceRecord::class),
         HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
-        HealthPermission.getReadPermission(HeartRateRecord::class)
+        HealthPermission.getReadPermission(HeartRateRecord::class),
+        HealthPermission.getReadPermission(SpeedRecord::class),
+        // CLAUDE CODE: ruta GPS. En HC esta como permiso de tipo string,
+        // no asociado a un Record type; ya esta declarado en el Manifest
+        // (READ_EXERCISE_ROUTE).
+        "android.permission.health.READ_EXERCISE_ROUTE"
     )
 
     /** Solo el de ExerciseSession es imprescindible para importar; el resto enriquece. */
@@ -62,6 +76,13 @@ class HealthConnectManager(private val context: Context) {
     suspend fun hasMinimumPermissions(): Boolean {
         val granted = client().permissionController.getGrantedPermissions()
         return granted.containsAll(essentialPermissions)
+    }
+
+    /** Conjunto de permisos actualmente concedidos. Util para detectar
+     * los que faltan y enseñar el boton de "Conceder mas permisos". */
+    suspend fun grantedPermissions(): Set<String> {
+        return runCatching { client().permissionController.getGrantedPermissions() }
+            .getOrDefault(emptySet())
     }
 
     /**
@@ -215,8 +236,145 @@ class HealthConnectManager(private val context: Context) {
         }
     }
 
+    /* CLAUDE CODE:
+     * Carga el detalle pesado para un workout importado de Health Connect:
+     * muestras de FC, ritmos, ruta GPS, laps y segments.
+     *
+     * sessionExternalId = metadata.id de la ExerciseSessionRecord original.
+     * Devuelve null si la sesion ya no existe (el usuario pudo borrarla en
+     * Health Connect) o si no tenemos permiso.
+     *
+     * Tolerante: si falta algun permiso o algun tipo de dato esta vacio,
+     * el campo correspondiente queda como emptyList(). No tira la operacion
+     * entera al traste.
+     */
+    suspend fun loadDetailForSession(sessionExternalId: String): WorkoutDetail? {
+        if (sessionExternalId.isBlank()) {
+            Log.d(TAG, "loadDetailForSession: externalId vacio")
+            return null
+        }
+        val client = client()
+
+        // CLAUDE CODE: lookup directo por record id.
+        val session = runCatching {
+            client.readRecord(ExerciseSessionRecord::class, sessionExternalId).record
+        }.onFailure {
+            Log.w(TAG, "readRecord fallo para $sessionExternalId", it)
+        }.getOrNull() ?: return null
+
+        val granted = client.permissionController.getGrantedPermissions()
+        val start = session.startTime
+        val end = session.endTime
+
+        Log.d(TAG, "Session encontrada: $sessionExternalId, $start..$end")
+        Log.d(TAG, "Permisos: HR=${HealthPermission.getReadPermission(HeartRateRecord::class) in granted} " +
+            "SPEED=${HealthPermission.getReadPermission(SpeedRecord::class) in granted} " +
+            "ROUTE=${"android.permission.health.READ_EXERCISE_ROUTE" in granted}")
+        Log.d(TAG, "Laps embebidos: ${session.laps.size}, Segments: ${session.segments.size}")
+
+        val hr = if (HealthPermission.getReadPermission(HeartRateRecord::class) in granted) {
+            readHrSamples(client, start, end)
+        } else emptyList()
+
+        val speed = if (HealthPermission.getReadPermission(SpeedRecord::class) in granted) {
+            readSpeedSamples(client, start, end)
+        } else emptyList()
+
+        val routePoints = extractRoute(session, start)
+
+        Log.d(TAG, "Detalle: hr=${hr.size} speed=${speed.size} route=${routePoints.size}")
+
+        val laps = session.laps.map { lap ->
+            LapInfo(
+                startOffsetMillis = Duration.between(start, lap.startTime).toMillis(),
+                durationSeconds = Duration.between(lap.startTime, lap.endTime).seconds,
+                distanceMeters = lap.length?.inMeters ?: 0.0
+            )
+        }
+
+        val segments = session.segments.map { seg ->
+            SegmentInfo(
+                startOffsetMillis = Duration.between(start, seg.startTime).toMillis(),
+                durationSeconds = Duration.between(seg.startTime, seg.endTime).seconds,
+                segmentTypeCode = seg.segmentType,
+                repetitions = seg.repetitions
+            )
+        }
+
+        return WorkoutDetail(
+            hrSamples = hr,
+            speedSamples = speed,
+            routePoints = routePoints,
+            laps = laps,
+            segments = segments
+        )
+    }
+
+    private suspend fun readHrSamples(
+        client: HealthConnectClient,
+        start: Instant,
+        end: Instant
+    ): List<HrSample> {
+        return runCatching {
+            val records = client.readRecords(
+                ReadRecordsRequest(
+                    recordType = HeartRateRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(start, end)
+                )
+            ).records
+            records.flatMap { record ->
+                record.samples.map { sample ->
+                    HrSample(
+                        timeOffsetMillis = Duration.between(start, sample.time).toMillis(),
+                        bpm = sample.beatsPerMinute.toInt()
+                    )
+                }
+            }.sortedBy { it.timeOffsetMillis }
+        }.getOrDefault(emptyList())
+    }
+
+    private suspend fun readSpeedSamples(
+        client: HealthConnectClient,
+        start: Instant,
+        end: Instant
+    ): List<SpeedSample> {
+        return runCatching {
+            val records = client.readRecords(
+                ReadRecordsRequest(
+                    recordType = SpeedRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(start, end)
+                )
+            ).records
+            records.flatMap { record ->
+                record.samples.map { sample ->
+                    SpeedSample(
+                        timeOffsetMillis = Duration.between(start, sample.time).toMillis(),
+                        mps = sample.speed.inMetersPerSecond
+                    )
+                }
+            }.sortedBy { it.timeOffsetMillis }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun extractRoute(
+        session: ExerciseSessionRecord,
+        start: Instant
+    ): List<RoutePoint> {
+        val result = session.exerciseRouteResult
+        if (result !is ExerciseRouteResult.Data) return emptyList()
+        return result.exerciseRoute.route.map { loc ->
+            RoutePoint(
+                timeOffsetMillis = Duration.between(start, loc.time).toMillis(),
+                lat = loc.latitude,
+                lon = loc.longitude,
+                altMeters = loc.altitude?.inMeters
+            )
+        }.sortedBy { it.timeOffsetMillis }
+    }
+
     companion object {
         const val SOURCE_HEALTH_CONNECT = "HEALTH_CONNECT"
+        private const val TAG = "HealthConnectMgr"
     }
 }
 

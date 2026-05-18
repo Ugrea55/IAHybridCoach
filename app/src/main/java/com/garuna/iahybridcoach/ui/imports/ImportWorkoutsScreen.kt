@@ -57,6 +57,7 @@ fun ImportWorkoutsScreen(
     viewModel: ImportWorkoutsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val missingPermissions by viewModel.missingPermissions.collectAsState()
 
     // CLAUDE CODE: contract proporcionado por la SDK de Health Connect.
     // Devuelve el set de permisos concedidos tras el dialog.
@@ -83,6 +84,8 @@ fun ImportWorkoutsScreen(
             )
             is ImportWorkoutsUiState.Ready -> ReadyContent(
                 state = state,
+                missingPermissions = missingPermissions,
+                onGrantMore = { permissionLauncher.launch(viewModel.permissions) },
                 onToggle = viewModel::toggleSelection,
                 onSelectAll = viewModel::selectAll,
                 onSelectNone = viewModel::selectNone,
@@ -153,6 +156,55 @@ private fun NeedsUpdateContent() {
 }
 
 @Composable
+private fun MissingPermissionsBanner(
+    missing: Set<String>,
+    onGrantMore: () -> Unit
+) {
+    val labels = missing.map { permissionLabel(it) }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Faltan ${missing.size} permisos opcionales",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    text = labels.joinToString(", "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(0.dp))
+            Button(onClick = onGrantMore) {
+                Text("Conceder")
+            }
+        }
+    }
+}
+
+/* CLAUDE CODE: nombre legible para los permisos que pedimos a Health Connect.
+ * Los strings de permisos vienen como "android.permission.health.READ_*".
+ */
+private fun permissionLabel(permission: String): String {
+    return when {
+        permission.endsWith("READ_EXERCISE") -> "Ejercicio"
+        permission.endsWith("READ_DISTANCE") -> "Distancia"
+        permission.endsWith("READ_TOTAL_CALORIES_BURNED") -> "Calorias"
+        permission.endsWith("READ_HEART_RATE") -> "Frecuencia cardiaca"
+        permission.endsWith("READ_SPEED") -> "Velocidad"
+        permission.endsWith("READ_EXERCISE_ROUTE") -> "Ruta GPS"
+        else -> permission.substringAfterLast(".")
+    }
+}
+
+@Composable
 private fun NeedsPermissionContent(onRequest: () -> Unit) {
     Centered {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -180,6 +232,8 @@ private fun NeedsPermissionContent(onRequest: () -> Unit) {
 @Composable
 private fun ReadyContent(
     state: ImportWorkoutsUiState.Ready,
+    missingPermissions: Set<String>,
+    onGrantMore: () -> Unit,
     onToggle: (ImportCandidate) -> Unit,
     onSelectAll: () -> Unit,
     onSelectNone: () -> Unit,
@@ -189,6 +243,13 @@ private fun ReadyContent(
     val seleccionados = state.candidates.count { it.selected && !it.alreadyImported }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        if (missingPermissions.isNotEmpty()) {
+            MissingPermissionsBanner(
+                missing = missingPermissions,
+                onGrantMore = onGrantMore
+            )
+        }
+
         if (state.candidates.isEmpty()) {
             Centered {
                 Text(

@@ -39,10 +39,21 @@ class ImportWorkoutsViewModel(application: Application) : AndroidViewModel(appli
         MutableStateFlow<ImportWorkoutsUiState>(ImportWorkoutsUiState.Loading)
     val uiState: StateFlow<ImportWorkoutsUiState> = _uiState.asStateFlow()
 
+    private val _missingPermissions = MutableStateFlow<Set<String>>(emptySet())
+    /** Permisos del set completo que aun no estan concedidos. */
+    val missingPermissions: StateFlow<Set<String>> = _missingPermissions.asStateFlow()
+
     val permissions: Set<String> get() = healthConnect.permissions
 
     init {
         refreshAvailability()
+    }
+
+    private fun refreshMissingPermissions() {
+        viewModelScope.launch {
+            val granted = healthConnect.grantedPermissions()
+            _missingPermissions.value = healthConnect.permissions - granted
+        }
     }
 
     /** Recalcula el estado inicial. Llamar tambien al volver del Play Store. */
@@ -63,6 +74,7 @@ class ImportWorkoutsViewModel(application: Application) : AndroidViewModel(appli
                     }
                 }
             }
+            refreshMissingPermissions()
         }
     }
 
@@ -79,6 +91,7 @@ class ImportWorkoutsViewModel(application: Application) : AndroidViewModel(appli
         } else {
             _uiState.value = ImportWorkoutsUiState.NeedsPermission
         }
+        refreshMissingPermissions()
     }
 
     private fun loadCandidates() {

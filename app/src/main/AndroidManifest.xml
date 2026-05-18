@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.health.READ_DISTANCE" />
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SPEED" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
 
     <!-- CLAUDE CODE: para que Health Connect detecte la app y la muestre en
          su lista de "apps conectadas". Es requisito a partir de Android 14

@@ -85,6 +85,24 @@ object WorkoutsRepository {
         }
     }
 
+    /** Lee un entrenamiento concreto por id. Null si no existe. */
+    suspend fun getWorkout(workoutId: String): Result<Workout?> {
+        val uid = currentUid
+            ?: return Result.failure(IllegalStateException("Sin sesion activa"))
+        if (workoutId.isBlank()) {
+            return Result.failure(IllegalArgumentException("workoutId vacio"))
+        }
+        return runCatching {
+            val snapshot = firestore.collection(USERS)
+                .document(uid)
+                .collection(WORKOUTS)
+                .document(workoutId)
+                .get()
+                .await()
+            if (snapshot.exists()) snapshot.toObject(Workout::class.java) else null
+        }
+    }
+
     /**
      * Actualiza un entrenamiento existente. Sobrescribe el documento entero.
      * Requiere que workout.id sea no vacio (el id viene de @DocumentId al

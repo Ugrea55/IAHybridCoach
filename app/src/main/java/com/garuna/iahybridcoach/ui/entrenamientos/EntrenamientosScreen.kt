@@ -70,6 +70,7 @@ import java.util.Locale
 @Composable
 fun EntrenamientosScreen(
     modifier: Modifier = Modifier,
+    onWorkoutClick: (String) -> Unit = {},
     viewModel: EntrenamientosViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -97,6 +98,9 @@ fun EntrenamientosScreen(
                     } else {
                         selectedIds + workout.id
                     }
+                } else {
+                    // CLAUDE CODE: tap normal -> abrir pantalla de detalle.
+                    onWorkoutClick(workout.id)
                 }
             },
             onItemLongPress = { workout ->
