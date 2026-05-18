@@ -85,6 +85,52 @@ object WorkoutsRepository {
         }
     }
 
+    /**
+     * Actualiza un entrenamiento existente. Sobrescribe el documento entero.
+     * Requiere que workout.id sea no vacio (el id viene de @DocumentId al
+     * haberlo leido antes con observeWorkouts).
+     */
+    suspend fun updateWorkout(workout: Workout): Result<Unit> {
+        val uid = currentUid
+            ?: return Result.failure(IllegalStateException("Sin sesion activa"))
+
+        if (workout.id.isBlank()) {
+            return Result.failure(IllegalArgumentException("workout.id vacio"))
+        }
+
+        return runCatching {
+            firestore.collection(USERS)
+                .document(uid)
+                .collection(WORKOUTS)
+                .document(workout.id)
+                .set(workout)
+                .await()
+        }
+    }
+
+    /**
+     * Devuelve el conjunto de externalId que ya estan en la BD del usuario.
+     * Util para evitar reimportar entrenos ya existentes (Health Connect,
+     * Strava, etc. - mismos IDs externos).
+     */
+    suspend fun existingExternalIds(): Result<Set<String>> {
+        val uid = currentUid
+            ?: return Result.failure(IllegalStateException("Sin sesion activa"))
+
+        return runCatching {
+            val snapshot = firestore.collection(USERS)
+                .document(uid)
+                .collection(WORKOUTS)
+                .whereGreaterThan("externalId", "")
+                .get()
+                .await()
+            snapshot.documents
+                .mapNotNull { it.getString("externalId") }
+                .filter { it.isNotBlank() }
+                .toSet()
+        }
+    }
+
     /** Borra un entrenamiento por su ID. */
     suspend fun deleteWorkout(workoutId: String): Result<Unit> {
         val uid = currentUid

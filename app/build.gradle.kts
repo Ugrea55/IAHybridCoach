@@ -73,6 +73,9 @@ dependencies {
 
     // CLAUDE CODE: calendario para Compose.
     implementation(libs.kizitonwose.calendar.compose)
+
+    // CLAUDE CODE: Health Connect (Google) para leer entrenos de wearables.
+    implementation(libs.androidx.health.connect.client)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

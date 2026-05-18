@@ -45,12 +45,22 @@ sealed class BottomNavDestination(
     )
 
     companion object {
-        /** Lista en el orden en que aparecen en la barra inferior. */
-        val all: List<BottomNavDestination> = listOf(
-            Entrenamientos,
-            Salud,
-            Calendario,
-            Chat
-        )
+        /* CLAUDE CODE:
+         * Lista en el orden en que aparecen en la barra inferior.
+         *
+         * Usamos `by lazy` (no inicializacion directa) para evitar un bug
+         * clasico de Kotlin: cuando el companion se inicializa antes que los
+         * `object` anidados (Entrenamientos, Salud, ...), la lista acaba
+         * conteniendo nulls. `lazy` difiere la construccion hasta la primera
+         * lectura, momento en que los singletons ya estan inicializados.
+         */
+        val all: List<BottomNavDestination> by lazy {
+            listOf(
+                Entrenamientos,
+                Salud,
+                Calendario,
+                Chat
+            )
+        }
     }
 }

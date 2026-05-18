@@ -16,6 +16,7 @@ lifecycleViewmodelCompose = "2.10.0"
 coroutinesPlayServices = "1.8.1"
 navigationCompose = "2.8.5"
 calendarCompose = "2.7.0"
+healthConnect = "1.1.0-rc02"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -65,6 +66,11 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 # HorizontalCalendar y WeekCalendar y deja que dibujemos cada celda
 # manualmente. Es la estandar de facto para calendarios en Compose.
 kizitonwose-calendar-compose = { group = "com.kizitonwose.calendar", name = "compose", version.ref = "calendarCompose" }
+
+# CLAUDE CODE: Health Connect SDK. Unifica el acceso a datos de salud y
+# fitness en Android (Garmin, Samsung Health, Huawei Health, Polar, etc.
+# vuelcan aqui). Permite leer entrenos sin OAuth ni backend.
+androidx-health-connect-client = { group = "androidx.health.connect", name = "connect-client", version.ref = "healthConnect" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -2,6 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- CLAUDE CODE: permisos de Health Connect. Solo pedimos lectura de
+         entrenamientos (ExerciseSession). El usuario los aprueba uno a uno
+         desde el dialog nativo de Health Connect, no es un permiso normal
+         de Android - lo gestiona la propia app Health Connect. -->
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+
+    <!-- CLAUDE CODE: para que Health Connect detecte la app y la muestre en
+         su lista de "apps conectadas". Es requisito a partir de Android 14
+         por las restricciones de queries de paquetes. -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -21,7 +37,31 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- CLAUDE CODE: Health Connect abre esta actividad cuando el
+                 usuario quiere ver la justificacion (rationale) de por que
+                 pedimos sus datos. Por simplicidad reusamos MainActivity y
+                 luego desde Compose detectamos el intent y mostramos un
+                 texto. Para produccion debe ser un link a una politica de
+                 privacidad publica real. -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
         </activity>
+
+        <!-- CLAUDE CODE: alias para la version moderna del intent que usa
+             Health Connect a partir de Android 14. Sin esto, en algunos
+             dispositivos no aparece el enlace a la politica. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
     </application>
 
 </manifest>

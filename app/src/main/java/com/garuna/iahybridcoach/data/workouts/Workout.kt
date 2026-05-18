@@ -28,7 +28,24 @@ data class Workout(
     @DocumentId val id: String = "",
     val tipo: String = WorkoutType.OTRO.name,
     val fecha: Timestamp = Timestamp.now(),
-    val descripcion: String = ""
+    val descripcion: String = "",
+    // CLAUDE CODE: origen del registro. "MANUAL" para entrenos creados
+    // desde la app; "HEALTH_CONNECT" para los importados de Health Connect;
+    // a futuro: "STRAVA", "GARMIN_DIRECT", etc. Util para diferenciar en
+    // UI y para deduplicar.
+    val source: String = "MANUAL",
+    // CLAUDE CODE: ID en el sistema externo (p.ej. metadata.id de la
+    // ExerciseSession de Health Connect). Para entrenos MANUAL queda vacio.
+    // Usado para evitar reimportar el mismo entreno dos veces.
+    val externalId: String = "",
+
+    // CLAUDE CODE: campos de resumen que rellenamos desde Health Connect.
+    // 0 / 0.0 = no disponible. La UI los muestra solo si > 0.
+    val duracionMinutos: Int = 0,
+    val distanciaMetros: Double = 0.0,
+    val caloriasKcal: Double = 0.0,
+    val fcMedia: Int = 0,
+    val fcMaxima: Int = 0
 ) {
     /**
      * Version tipada del campo `tipo`. Tolerante a valores invalidos.

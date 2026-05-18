@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -29,23 +30,22 @@ import androidx.navigation.compose.rememberNavController
 import com.garuna.iahybridcoach.ui.calendario.CalendarioScreen
 import com.garuna.iahybridcoach.ui.chat.ChatScreen
 import com.garuna.iahybridcoach.ui.entrenamientos.EntrenamientosScreen
+import com.garuna.iahybridcoach.ui.imports.ImportWorkoutsScreen
 import com.garuna.iahybridcoach.ui.profile.ProfileScreen
 import com.garuna.iahybridcoach.ui.salud.SaludScreen
 
 private const val ROUTE_PROFILE = "profile"
+private const val ROUTE_IMPORT_WORKOUTS = "import_workouts"
 
 /* CLAUDE CODE:
- * Contenedor principal para usuarios autenticados. Monta:
- *   - TopAppBar adaptativa segun la ruta:
- *       - en cualquier tab: titulo "IAHybridCoach" + icono de menu con
- *         dropdown (Perfil / Cerrar sesion).
- *       - en /profile: flecha de volver + titulo "Perfil".
- *   - NavigationBar inferior (oculta en /profile).
- *   - NavHost que conmuta entre las pantallas segun la ruta activa.
+ * Contenedor principal para usuarios autenticados.
  *
- * Profile se trata como una "ruta secundaria" del mismo NavHost: no aparece
- * en la barra inferior, se navega a ella desde el menu, y la flecha de
- * volver hace popBackStack() para regresar a la tab anterior.
+ * TopAppBar adaptativa segun la ruta:
+ *   - en una tab generica:   titulo + menu (Perfil / Cerrar sesion).
+ *   - en /entrenamientos:    igual + icono de IMPORTAR (Health Connect).
+ *   - en /profile o /import: flecha de volver + titulo de pantalla.
+ *
+ * Bottom bar oculta en rutas secundarias (profile, import_workouts).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,29 +56,41 @@ fun MainScaffold(
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
+
     val isProfileRoute = currentRoute == ROUTE_PROFILE
+    val isImportRoute = currentRoute == ROUTE_IMPORT_WORKOUTS
+    val isSecondaryRoute = isProfileRoute || isImportRoute
+    val isEntrenosTab = currentRoute == BottomNavDestination.Entrenamientos.route
 
     var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            if (isProfileRoute) {
-                TopAppBar(
-                    title = { Text("Perfil") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver"
-                            )
-                        }
-                    }
+            when {
+                isProfileRoute -> SecondaryRouteTopBar(
+                    title = "Perfil",
+                    onBack = { navController.popBackStack() }
                 )
-            } else {
-                TopAppBar(
+                isImportRoute -> SecondaryRouteTopBar(
+                    title = "Importar entrenos",
+                    onBack = { navController.popBackStack() }
+                )
+                else -> TopAppBar(
                     title = { Text("IAHybridCoach") },
                     actions = {
+                        if (isEntrenosTab) {
+                            IconButton(onClick = {
+                                navController.navigate(ROUTE_IMPORT_WORKOUTS) {
+                                    launchSingleTop = true
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.CloudDownload,
+                                    contentDescription = "Importar entrenos"
+                                )
+                            }
+                        }
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
@@ -111,9 +123,7 @@ fun MainScaffold(
             }
         },
         bottomBar = {
-            // CLAUDE CODE: la barra inferior se oculta en /profile para que
-            // se note que es una pantalla "secundaria" y no una tab.
-            if (!isProfileRoute) {
+            if (!isSecondaryRoute) {
                 NavigationBar {
                     BottomNavDestination.all.forEach { destination ->
                         NavigationBarItem(
@@ -160,6 +170,27 @@ fun MainScaffold(
             composable(ROUTE_PROFILE) {
                 ProfileScreen()
             }
+            composable(ROUTE_IMPORT_WORKOUTS) {
+                ImportWorkoutsScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SecondaryRouteTopBar(title: String, onBack: () -> Unit) {
+    TopAppBar(
+        title = { Text(title) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver"
+                )
+            }
+        }
+    )
 }

@@ -65,6 +65,20 @@ class EntrenamientosViewModel : ViewModel() {
     }
 
     /**
+     * Actualiza un entrenamiento existente. Refresco automatico via listener.
+     */
+    fun updateWorkout(workout: Workout) {
+        viewModelScope.launch {
+            WorkoutsRepository.updateWorkout(workout)
+                .onFailure { e ->
+                    _uiState.value = EntrenamientosUiState.Error(
+                        e.message ?: "No se pudo actualizar el entrenamiento"
+                    )
+                }
+        }
+    }
+
+    /**
      * Borra un entrenamiento. La lista se refresca sola via el listener en
      * tiempo real; no hay que tocar _uiState manualmente.
      */
@@ -76,6 +90,22 @@ class EntrenamientosViewModel : ViewModel() {
                         e.message ?: "No se pudo borrar el entrenamiento"
                     )
                 }
+        }
+    }
+
+    /** Borra varios entrenos en paralelo. */
+    fun deleteMany(workoutIds: Collection<String>) {
+        if (workoutIds.isEmpty()) return
+        viewModelScope.launch {
+            for (id in workoutIds) {
+                WorkoutsRepository.deleteWorkout(id)
+                    .onFailure { e ->
+                        _uiState.value = EntrenamientosUiState.Error(
+                            e.message ?: "Error al borrar"
+                        )
+                        return@launch
+                    }
+            }
         }
     }
 }
