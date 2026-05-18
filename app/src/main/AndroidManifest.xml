@@ -33,6 +33,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.IAHybridCoach">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -48,6 +49,18 @@
                  privacidad publica real. -->
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+
+            <!-- CLAUDE CODE: deep link del callback de Strava OAuth. La
+                 pagina puente en Firebase Hosting redirige a este URI tras
+                 que Strava devuelva el code. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="iahybridcoach"
+                    android:host="strava-callback" />
             </intent-filter>
         </activity>
 

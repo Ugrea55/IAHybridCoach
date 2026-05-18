@@ -53,6 +53,7 @@ private val ES_LOCALE = Locale("es", "ES")
 @Composable
 fun ImportWorkoutsScreen(
     onBack: () -> Unit,
+    onConnectStrava: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ImportWorkoutsViewModel = viewModel()
 ) {
@@ -89,7 +90,8 @@ fun ImportWorkoutsScreen(
                 onToggle = viewModel::toggleSelection,
                 onSelectAll = viewModel::selectAll,
                 onSelectNone = viewModel::selectNone,
-                onImport = viewModel::importSelected
+                onImport = viewModel::importSelected,
+                onConnectStrava = onConnectStrava
             )
             is ImportWorkoutsUiState.Done -> DoneContent(
                 imported = state.imported,
@@ -150,6 +152,36 @@ private fun NeedsUpdateContent() {
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { openHealthConnectInPlayStore(context) }) {
                 Text("Actualizar")
+            }
+        }
+    }
+}
+
+@Composable
+private fun StravaConnectBanner(onConnectStrava: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Conectar Strava",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    text = "Para leer FC por segmento, laps y ruta GPS de tus entrenos.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(0.dp))
+            Button(onClick = onConnectStrava) {
+                Text("Conectar")
             }
         }
     }
@@ -237,7 +269,8 @@ private fun ReadyContent(
     onToggle: (ImportCandidate) -> Unit,
     onSelectAll: () -> Unit,
     onSelectNone: () -> Unit,
-    onImport: () -> Unit
+    onImport: () -> Unit,
+    onConnectStrava: () -> Unit
 ) {
     val nuevos = state.candidates.count { !it.alreadyImported }
     val seleccionados = state.candidates.count { it.selected && !it.alreadyImported }
@@ -249,6 +282,8 @@ private fun ReadyContent(
                 onGrantMore = onGrantMore
             )
         }
+
+        StravaConnectBanner(onConnectStrava = onConnectStrava)
 
         if (state.candidates.isEmpty()) {
             Centered {

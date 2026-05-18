@@ -61,3 +61,10 @@ key.properties
 # ---- Logs y temporales ----
 *.log
 hs_err_pid*
+
+# ---- Firebase / Node.js ----
+# CLAUDE CODE: artefactos de Cloud Functions. node_modules es enorme,
+# lib/ son los JS compilados desde TS.
+functions/node_modules/
+functions/lib/
+.firebase/

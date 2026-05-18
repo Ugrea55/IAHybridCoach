@@ -1,0 +1,87 @@
+<!--
+ CLAUDE CODE:
+ Pagina puente del OAuth de Strava. Strava redirige aqui con ?code=...
+ (o ?error=...) y este HTML rebota inmediatamente al deep link de la app
+ Android (iahybridcoach://strava-callback?code=...).
+
+ Si el usuario abre el link sin haber instalado la app (por error), vera
+ el texto "Esta pagina es parte del flujo de inicio de sesion...".
+
+ No usa frameworks: HTML + JS puro, asi carga instantaneo desde Firebase
+ Hosting (CDN global).
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAHybridCoach · Conectando con Strava</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #1c1b1f;
+            color: #e6e1e5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            text-align: center;
+        }
+        h1 { font-size: 1.4rem; margin-bottom: 8px; font-weight: 600; }
+        p { color: #cac4cf; margin: 4px 0; }
+        .spinner {
+            border: 3px solid #444;
+            border-top-color: #d0bcff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        a {
+            color: #d0bcff;
+            text-decoration: none;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <h1>Volviendo a IAHybridCoach</h1>
+    <p>Esta pagina forma parte del inicio de sesion con Strava.</p>
+    <p id="manual" style="display:none;">
+        Si no se abre la app automaticamente, <a id="manual-link" href="#">pulsa aqui</a>.
+    </p>
+
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const error = params.get('error');
+            const scope = params.get('scope');
+
+            const parts = [];
+            if (code) parts.push('code=' + encodeURIComponent(code));
+            if (error) parts.push('error=' + encodeURIComponent(error));
+            if (scope) parts.push('scope=' + encodeURIComponent(scope));
+            const query = parts.length ? '?' + parts.join('&') : '';
+
+            const deepLink = 'iahybridcoach://strava-callback' + query;
+
+            // Mostramos un fallback manual por si el redirect automatico no funciona
+            // (algunos navegadores bloquean redirects a custom schemes).
+            const manual = document.getElementById('manual');
+            const manualLink = document.getElementById('manual-link');
+            manualLink.href = deepLink;
+            setTimeout(function () { manual.style.display = 'block'; }, 1500);
+
+            // Redirect automatico inmediato.
+            window.location.replace(deepLink);
+        })();
+    </script>
+</body>
+</html>

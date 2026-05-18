@@ -1,0 +1,5 @@
+# CLAUDE CODE: artefactos generados, no van al repo.
+node_modules/
+lib/
+ui-debug.log
+firebase-debug.log

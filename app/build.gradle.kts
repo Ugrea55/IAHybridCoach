@@ -57,6 +57,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.functions.ktx)
 
     // CLAUDE CODE: librerias para el login con Google via Credential Manager.
     implementation(libs.androidx.credentials)

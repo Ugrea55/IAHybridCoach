@@ -1,6 +1,8 @@
 package com.garuna.iahybridcoach
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +22,8 @@ import androidx.compose.ui.Modifier
 import com.garuna.iahybridcoach.data.auth.AuthRepository
 import com.garuna.iahybridcoach.data.profile.UserProfile
 import com.garuna.iahybridcoach.data.profile.UserProfileRepository
+import com.garuna.iahybridcoach.data.strava.StravaCallbackBus
+import com.garuna.iahybridcoach.data.strava.StravaCallbackEvent
 import com.garuna.iahybridcoach.ui.login.LoginScreen
 import com.garuna.iahybridcoach.ui.main.MainScaffold
 import com.garuna.iahybridcoach.ui.onboarding.OnboardingScreen
@@ -28,22 +32,21 @@ import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.catch
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // CLAUDE CODE: si la Activity se ha abierto por el deep link de
+        // Strava (porque la app estaba cerrada), publicamos el evento.
+        handleIntent(intent)
+
         setContent {
             IAHybridCoachTheme {
-                // CLAUDE CODE: navegacion de alto nivel.
-                //   Sin sesion          -> LoginScreen
-                //   Sesion + cargando   -> spinner
-                //   Sesion sin perfil   -> OnboardingScreen
-                //   Sesion con perfil   -> MainScaffold (4 tabs)
                 var currentUser by remember {
                     mutableStateOf<FirebaseUser?>(AuthRepository.currentUser)
                 }
 
-                // CLAUDE CODE: estado del perfil. profileLoaded distingue entre
-                // "todavia no he leido Firestore" y "ya he leido y no hay perfil".
                 var profile by remember { mutableStateOf<UserProfile?>(null) }
                 var profileLoaded by remember { mutableStateOf(false) }
 
@@ -55,7 +58,7 @@ class MainActivity : ComponentActivity() {
                     }
                     profileLoaded = false
                     UserProfileRepository.observeProfile()
-                        .catch { /* silencioso: el spinner se quedaria pero el usuario puede reintentar reiniciando */ }
+                        .catch { }
                         .collect { value ->
                             profile = value
                             profileLoaded = true
@@ -92,5 +95,40 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /* CLAUDE CODE: cuando la Activity ya esta viva y llega un nuevo intent
+     * (deep link, share, etc.) Android llama onNewIntent. Manejamos el
+     * caso de que el usuario abra el deep link teniendo la app abierta. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val data = intent?.data
+        Log.d(TAG, "handleIntent action=${intent?.action} data=$data")
+        if (data == null) return
+        if (data.scheme == "iahybridcoach" && data.host == "strava-callback") {
+            val code = data.getQueryParameter("code")
+            val error = data.getQueryParameter("error")
+            Log.d(TAG, "Strava callback recibido: code=${code?.take(8)}... error=$error")
+            when {
+                !code.isNullOrBlank() -> StravaCallbackBus.publish(
+                    StravaCallbackEvent.Success(code)
+                )
+                !error.isNullOrBlank() -> StravaCallbackBus.publish(
+                    StravaCallbackEvent.Failure(error)
+                )
+                else -> StravaCallbackBus.publish(
+                    StravaCallbackEvent.Failure("Sin code ni error en el callback")
+                )
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "MainActivity"
     }
 }
