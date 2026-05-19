@@ -54,11 +54,13 @@ private val ES_LOCALE = Locale("es", "ES")
 fun ImportWorkoutsScreen(
     onBack: () -> Unit,
     onConnectStrava: () -> Unit = {},
+    onImportStrava: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ImportWorkoutsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val missingPermissions by viewModel.missingPermissions.collectAsState()
+    val stravaConnected by viewModel.stravaConnected.collectAsState()
 
     // CLAUDE CODE: contract proporcionado por la SDK de Health Connect.
     // Devuelve el set de permisos concedidos tras el dialog.
@@ -91,7 +93,9 @@ fun ImportWorkoutsScreen(
                 onSelectAll = viewModel::selectAll,
                 onSelectNone = viewModel::selectNone,
                 onImport = viewModel::importSelected,
-                onConnectStrava = onConnectStrava
+                stravaConnected = stravaConnected,
+                onConnectStrava = onConnectStrava,
+                onImportStrava = onImportStrava
             )
             is ImportWorkoutsUiState.Done -> DoneContent(
                 imported = state.imported,
@@ -158,7 +162,11 @@ private fun NeedsUpdateContent() {
 }
 
 @Composable
-private fun StravaConnectBanner(onConnectStrava: () -> Unit) {
+private fun StravaBanner(
+    connected: Boolean,
+    onConnectStrava: () -> Unit,
+    onImportStrava: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,18 +178,24 @@ private fun StravaConnectBanner(onConnectStrava: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Conectar Strava",
+                    text = if (connected) "Strava conectada" else "Conectar Strava",
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
-                    text = "Para leer FC por segmento, laps y ruta GPS de tus entrenos.",
+                    text = if (connected) {
+                        "Importa tus actividades con FC, laps y mas detalle."
+                    } else {
+                        "Para leer FC por segmento, laps y ruta GPS de tus entrenos."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.height(0.dp))
-            Button(onClick = onConnectStrava) {
-                Text("Conectar")
+            if (connected) {
+                Button(onClick = onImportStrava) { Text("Importar") }
+            } else {
+                Button(onClick = onConnectStrava) { Text("Conectar") }
             }
         }
     }
@@ -270,7 +284,9 @@ private fun ReadyContent(
     onSelectAll: () -> Unit,
     onSelectNone: () -> Unit,
     onImport: () -> Unit,
-    onConnectStrava: () -> Unit
+    stravaConnected: Boolean,
+    onConnectStrava: () -> Unit,
+    onImportStrava: () -> Unit
 ) {
     val nuevos = state.candidates.count { !it.alreadyImported }
     val seleccionados = state.candidates.count { it.selected && !it.alreadyImported }
@@ -283,7 +299,11 @@ private fun ReadyContent(
             )
         }
 
-        StravaConnectBanner(onConnectStrava = onConnectStrava)
+        StravaBanner(
+            connected = stravaConnected,
+            onConnectStrava = onConnectStrava,
+            onImportStrava = onImportStrava
+        )
 
         if (state.candidates.isEmpty()) {
             Centered {

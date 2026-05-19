@@ -34,6 +34,7 @@ import com.garuna.iahybridcoach.ui.chat.ChatScreen
 import com.garuna.iahybridcoach.ui.detail.WorkoutDetailScreen
 import com.garuna.iahybridcoach.ui.entrenamientos.EntrenamientosScreen
 import com.garuna.iahybridcoach.ui.imports.ImportWorkoutsScreen
+import com.garuna.iahybridcoach.ui.imports.strava.ImportStravaScreen
 import com.garuna.iahybridcoach.ui.profile.ProfileScreen
 import com.garuna.iahybridcoach.ui.salud.SaludScreen
 import com.garuna.iahybridcoach.ui.strava.StravaConnectScreen
@@ -42,6 +43,7 @@ private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_IMPORT_WORKOUTS = "import_workouts"
 private const val ROUTE_WORKOUT_DETAIL = "workout_detail"
 private const val ROUTE_STRAVA_CONNECT = "strava_connect"
+private const val ROUTE_STRAVA_IMPORT = "strava_import"
 private const val ARG_WORKOUT_ID = "workoutId"
 
 /* CLAUDE CODE:
@@ -68,7 +70,8 @@ fun MainScaffold(
     val isImportRoute = currentRoute == ROUTE_IMPORT_WORKOUTS
     val isDetailRoute = currentRoute?.startsWith("$ROUTE_WORKOUT_DETAIL/") == true
     val isStravaRoute = currentRoute == ROUTE_STRAVA_CONNECT
-    val isSecondaryRoute = isProfileRoute || isImportRoute || isDetailRoute || isStravaRoute
+    val isStravaImportRoute = currentRoute == ROUTE_STRAVA_IMPORT
+    val isSecondaryRoute = isProfileRoute || isImportRoute || isDetailRoute || isStravaRoute || isStravaImportRoute
     val isEntrenosTab = currentRoute == BottomNavDestination.Entrenamientos.route
 
     var menuExpanded by remember { mutableStateOf(false) }
@@ -91,6 +94,10 @@ fun MainScaffold(
                 )
                 isStravaRoute -> SecondaryRouteTopBar(
                     title = "Strava",
+                    onBack = { navController.popBackStack() }
+                )
+                isStravaImportRoute -> SecondaryRouteTopBar(
+                    title = "Importar de Strava",
                     onBack = { navController.popBackStack() }
                 )
                 else -> TopAppBar(
@@ -200,11 +207,21 @@ fun MainScaffold(
                         navController.navigate(ROUTE_STRAVA_CONNECT) {
                             launchSingleTop = true
                         }
+                    },
+                    onImportStrava = {
+                        navController.navigate(ROUTE_STRAVA_IMPORT) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
             composable(ROUTE_STRAVA_CONNECT) {
                 StravaConnectScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(ROUTE_STRAVA_IMPORT) {
+                ImportStravaScreen(
                     onBack = { navController.popBackStack() }
                 )
             }

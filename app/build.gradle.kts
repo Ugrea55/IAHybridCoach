@@ -77,6 +77,9 @@ dependencies {
 
     // CLAUDE CODE: Health Connect (Google) para leer entrenos de wearables.
     implementation(libs.androidx.health.connect.client)
+
+    // CLAUDE CODE: Vico - graficos en Compose (FC, velocidad por segundo).
+    implementation(libs.vico.compose.m3)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

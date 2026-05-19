@@ -99,7 +99,11 @@ private fun ReadyContent(state: WorkoutDetailUiState.Ready) {
             }
             state.hcNoData -> item {
                 NoDetailCard(
-                    message = "Health Connect no devolvio datos detallados para este entreno."
+                    message = if (state.workout.source == "STRAVA") {
+                        "Strava no devolvio datos detallados para este entreno."
+                    } else {
+                        "Health Connect no devolvio datos detallados para este entreno."
+                    }
                 )
             }
             state.detail == null && state.workout.source != "HEALTH_CONNECT" -> item {
@@ -109,6 +113,33 @@ private fun ReadyContent(state: WorkoutDetailUiState.Ready) {
             }
             state.detail != null -> {
                 val d = state.detail
+
+                if (d.hrSamples.isNotEmpty()) {
+                    item { SectionTitle("Frecuencia cardiaca") }
+                    item {
+                        WorkoutLineChart(
+                            title = "FC en el tiempo",
+                            timeOffsetsMillis = d.hrSamples.map { it.timeOffsetMillis },
+                            values = d.hrSamples.map { it.bpm.toDouble() },
+                            unit = "bpm"
+                        )
+                    }
+                }
+
+                if (d.speedSamples.isNotEmpty()) {
+                    item { SectionTitle("Velocidad") }
+                    item {
+                        // CLAUDE CODE: convertimos m/s a km/h para que el eje
+                        // sea legible (numeros mas grandes y familiares).
+                        WorkoutLineChart(
+                            title = "Velocidad en el tiempo",
+                            timeOffsetsMillis = d.speedSamples.map { it.timeOffsetMillis },
+                            values = d.speedSamples.map { it.mps * 3.6 },
+                            unit = "km/h"
+                        )
+                    }
+                }
+
                 if (d.laps.isNotEmpty()) {
                     item { SectionTitle("Vueltas (laps)") }
                     itemsIndexed(d.laps) { index, lap ->
@@ -122,7 +153,8 @@ private fun ReadyContent(state: WorkoutDetailUiState.Ready) {
                     }
                 }
 
-                // Placeholder de futuras secciones (graficos FC, ritmo, mapa).
+                // Resumen de datos disponibles (con info para depurar
+                // por que falta algo).
                 item { FuturePlaceholdersCard(detail = d) }
             }
         }
@@ -245,9 +277,10 @@ private fun LapRow(index: Int, lap: LapInfo) {
                     text = formatDuracion(lap.durationSeconds),
                     style = MaterialTheme.typography.bodyMedium
                 )
-                if (lap.distanceMeters > 0) {
+                val resumen = buildLapResumen(lap)
+                if (resumen.isNotBlank()) {
                     Text(
-                        text = formatDistancia(lap.distanceMeters),
+                        text = resumen,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -255,6 +288,25 @@ private fun LapRow(index: Int, lap: LapInfo) {
             }
         }
     }
+}
+
+/* CLAUDE CODE: construye una linea-resumen del lap omitiendo campos a 0,
+ * tipo "1.00 km · 5:00/km · FC 145". El ritmo se calcula sobre la velocidad
+ * media (mas natural para correr que m/s). */
+private fun buildLapResumen(lap: LapInfo): String {
+    val partes = mutableListOf<String>()
+    if (lap.distanceMeters > 0) partes += formatDistancia(lap.distanceMeters)
+    if (lap.avgSpeedMps > 0) partes += formatPaceMinPerKm(lap.avgSpeedMps)
+    if (lap.avgHeartRate > 0) partes += "FC ${lap.avgHeartRate}"
+    return partes.joinToString(" · ")
+}
+
+private fun formatPaceMinPerKm(mps: Double): String {
+    if (mps <= 0) return "—"
+    val secPerKm = 1000.0 / mps
+    val minutes = (secPerKm / 60).toInt()
+    val seconds = (secPerKm % 60).toInt()
+    return "%d:%02d/km".format(minutes, seconds)
 }
 
 @Composable
@@ -293,7 +345,7 @@ private fun LoadingFromHcCard() {
             )
             Spacer(modifier = Modifier.height(0.dp))
             Text(
-                text = "  Cargando datos desde Health Connect...",
+                text = "  Cargando datos detallados...",
                 style = MaterialTheme.typography.bodyMedium
             )
         }

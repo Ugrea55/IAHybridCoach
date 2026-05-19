@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.garuna.iahybridcoach.data.healthconnect.HealthConnectManager
+import com.garuna.iahybridcoach.data.strava.StravaActivitiesRepository
 import com.garuna.iahybridcoach.data.workouts.Workout
 import com.garuna.iahybridcoach.data.workouts.WorkoutsRepository
 import com.garuna.iahybridcoach.data.workouts.detail.WorkoutDetail
@@ -68,15 +69,21 @@ class WorkoutDetailViewModel(application: Application) : AndroidViewModel(applic
                         hcNoData = false
                     )
                 } else {
-                    // Aun no hay detalle. Si es de Health Connect y aun no
-                    // hemos intentado descargarlo, lanzamos la fetch.
-                    if (!hcFetchAttempted &&
-                        workout.source == HealthConnectManager.SOURCE_HEALTH_CONNECT &&
-                        workout.externalId.isNotBlank()
-                    ) {
-                        hcFetchAttempted = true
-                        _uiState.value = current.copy(loadingFromHc = true)
-                        fetchAndSaveFromHc(workoutId, workout)
+                    // Aun no hay detalle. Lanzamos fetch segun el source.
+                    if (!hcFetchAttempted && workout.externalId.isNotBlank()) {
+                        when {
+                            workout.source == HealthConnectManager.SOURCE_HEALTH_CONNECT -> {
+                                hcFetchAttempted = true
+                                _uiState.value = current.copy(loadingFromHc = true)
+                                fetchAndSaveFromHc(workoutId, workout)
+                            }
+                            workout.source == "STRAVA" -> {
+                                hcFetchAttempted = true
+                                _uiState.value = current.copy(loadingFromHc = true)
+                                fetchAndSaveFromStrava(workoutId, workout)
+                            }
+                            else -> _uiState.value = current.copy(loadingFromHc = false)
+                        }
                     } else {
                         _uiState.value = current.copy(loadingFromHc = false)
                     }
@@ -91,32 +98,58 @@ class WorkoutDetailViewModel(application: Application) : AndroidViewModel(applic
                 healthConnect.loadDetailForSession(workout.externalId)
             }.getOrNull()
 
-            if (fetched == null) {
-                val current = _uiState.value as? WorkoutDetailUiState.Ready
-                if (current != null) {
-                    _uiState.value = current.copy(loadingFromHc = false, hcNoData = true)
-                }
-                return@launch
-            }
-
-            // Si todo viene vacio (HC sin samples para este entreno), tambien
-            // marcamos hcNoData para que la UI lo refleje.
-            val allEmpty = fetched.hrSamples.isEmpty() &&
-                fetched.speedSamples.isEmpty() &&
-                fetched.routePoints.isEmpty() &&
-                fetched.laps.isEmpty() &&
-                fetched.segments.isEmpty()
-
-            if (allEmpty) {
-                val current = _uiState.value as? WorkoutDetailUiState.Ready
-                if (current != null) {
-                    _uiState.value = current.copy(loadingFromHc = false, hcNoData = true)
-                }
-                return@launch
-            }
-
-            // Guardar -> el observer del Flow detectara el cambio y actualizara.
-            WorkoutDetailRepository.saveDetail(workoutId, fetched)
+            handleFetchedDetail(workoutId, fetched)
         }
+    }
+
+    /* CLAUDE CODE: para entrenos importados de Strava, el externalId tiene
+     * forma "strava-{activityId}". Extraemos el id numerico y pedimos el
+     * detalle a la Cloud Function. */
+    private fun fetchAndSaveFromStrava(workoutId: String, workout: Workout) {
+        viewModelScope.launch {
+            val activityId = workout.externalId
+                .removePrefix("strava-")
+                .toLongOrNull()
+            if (activityId == null) {
+                val current = _uiState.value as? WorkoutDetailUiState.Ready
+                if (current != null) {
+                    _uiState.value = current.copy(loadingFromHc = false, hcNoData = true)
+                }
+                return@launch
+            }
+
+            val fetched = StravaActivitiesRepository.getActivityDetail(activityId)
+                .getOrNull()
+            handleFetchedDetail(workoutId, fetched)
+        }
+    }
+
+    /* CLAUDE CODE: logica comun entre fetchAndSaveFromHc y FromStrava.
+     * Si llega null o vacio, marcamos hcNoData. Si llega con datos,
+     * guardamos en Firestore y el listener actualiza la UI. */
+    private suspend fun handleFetchedDetail(workoutId: String, fetched: WorkoutDetail?) {
+        if (fetched == null) {
+            val current = _uiState.value as? WorkoutDetailUiState.Ready
+            if (current != null) {
+                _uiState.value = current.copy(loadingFromHc = false, hcNoData = true)
+            }
+            return
+        }
+
+        val allEmpty = fetched.hrSamples.isEmpty() &&
+            fetched.speedSamples.isEmpty() &&
+            fetched.routePoints.isEmpty() &&
+            fetched.laps.isEmpty() &&
+            fetched.segments.isEmpty()
+
+        if (allEmpty) {
+            val current = _uiState.value as? WorkoutDetailUiState.Ready
+            if (current != null) {
+                _uiState.value = current.copy(loadingFromHc = false, hcNoData = true)
+            }
+            return
+        }
+
+        WorkoutDetailRepository.saveDetail(workoutId, fetched)
     }
 }

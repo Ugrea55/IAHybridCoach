@@ -48,7 +48,11 @@ data class RoutePoint(
 data class LapInfo(
     val startOffsetMillis: Long = 0L,
     val durationSeconds: Long = 0L,
-    val distanceMeters: Double = 0.0
+    val distanceMeters: Double = 0.0,
+    /** FC media en bpm. 0 = no disponible. */
+    val avgHeartRate: Int = 0,
+    /** Velocidad media en m/s. 0 = no disponible. */
+    val avgSpeedMps: Double = 0.0
 )
 
 data class SegmentInfo(

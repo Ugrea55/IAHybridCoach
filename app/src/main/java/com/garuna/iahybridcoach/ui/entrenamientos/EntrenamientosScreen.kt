@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -74,6 +75,7 @@ fun EntrenamientosScreen(
     viewModel: EntrenamientosViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val syncing by viewModel.syncing.collectAsState()
 
     var showAddSheet by remember { mutableStateOf(false) }
     var editingWorkout by remember { mutableStateOf<Workout?>(null) }
@@ -87,6 +89,9 @@ fun EntrenamientosScreen(
         ?.workouts.orEmpty()
 
     Box(modifier = modifier.fillMaxSize()) {
+        if (syncing) {
+            SyncingBanner(modifier = Modifier.align(Alignment.TopCenter))
+        }
         EntrenamientosScreenContent(
             uiState = uiState,
             selectedIds = selectedIds,
@@ -187,6 +192,35 @@ fun EntrenamientosScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun SyncingBanner(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.height(16.dp),
+                strokeWidth = 2.dp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Sincronizando entrenos...",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

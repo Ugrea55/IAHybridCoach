@@ -17,6 +17,7 @@ coroutinesPlayServices = "1.8.1"
 navigationCompose = "2.8.5"
 calendarCompose = "2.7.0"
 healthConnect = "1.1.0-rc02"
+vico = "2.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,6 +73,9 @@ kizitonwose-calendar-compose = { group = "com.kizitonwose.calendar", name = "com
 # fitness en Android (Garmin, Samsung Health, Huawei Health, Polar, etc.
 # vuelcan aqui). Permite leer entrenos sin OAuth ni backend.
 androidx-health-connect-client = { group = "androidx.health.connect", name = "connect-client", version.ref = "healthConnect" }
+
+# CLAUDE CODE: Vico para graficos en Compose (FC, ritmo, etc.).
+vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
